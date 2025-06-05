@@ -1,0 +1,86 @@
+name: Build and Release Yalla Ride APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Analyze code
+      run: flutter analyze
+      
+    - name: Run tests
+      run: flutter test
+      
+    - name: Build APK (Debug)
+      run: flutter build apk --debug
+      
+    - name: Build APK (Release)
+      run: flutter build apk --release
+      
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: yalla-ride-debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
+        
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: yalla-ride-release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Yalla Ride v${{ github.run_number }}
+        body: |
+          🚗 تطبيق يلا رايد - الإصدار الجديد
+          
+          ## الميزات:
+          - ✅ نظام النقل الذكي
+          - ✅ دفع زين كاش
+          - ✅ تتبع الرحلات
+          - ✅ نظام العمولات
+          - ✅ اشتراك Plus
+          
+          ## التحديثات:
+          - تحسينات في الأداء
+          - إصلاح الأخطاء
+          - واجهة محسنة
+          
+          تحميل سعيد! 🎉
+        files: |
+          build/app/outputs/flutter-apk/app-release.apk
+          build/app/outputs/flutter-apk/app-debug.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

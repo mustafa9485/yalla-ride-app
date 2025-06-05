@@ -1,0 +1,50 @@
+name: Firebase App Distribution
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  distribute:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.5'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build APK
+      run: flutter build apk --release
+      
+    - name: Upload to Firebase App Distribution
+      uses: wzieba/Firebase-Distribution-Github-Action@v1
+      with:
+        appId: ${{ secrets.FIREBASE_APP_ID }}
+        serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
+        groups: testers
+        file: build/app/outputs/flutter-apk/app-release.apk
+        releaseNotes: |
+          🚗 تطبيق يلا رايد - إصدار جديد للاختبار
+          
+          الميزات الجديدة:
+          - تحسينات في الأداء
+          - إصلاح الأخطاء
+          - واجهة محسنة
+          
+          يرجى اختبار التطبيق وإرسال الملاحظات 📝
+

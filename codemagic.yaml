@@ -1,0 +1,71 @@
+workflows:
+  yalla-ride-workflow:
+    name: Yalla Ride Build & Deploy
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      android_signing:
+        - keystore_reference
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.yallaride.app
+      vars:
+        PACKAGE_NAME: "com.yallaride.app"
+        GOOGLE_PLAY_TRACK: internal
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+      - name: Flutter unit tests
+        script: |
+          flutter test
+        ignore_failure: true
+      - name: Build APK with Flutter
+        script: |
+          flutter build apk --release
+      - name: Build AAB with Flutter
+        script: |
+          flutter build appbundle --release
+      - name: Build iOS
+        script: |
+          flutter build ios --release --no-codesign
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner \
+            --archive-flags="-destination 'generic/platform=iOS'"
+    artifacts:
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/mapping.txt
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - admin@yallaride.com
+        notify:
+          success: true
+          failure: true
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - App Store Connect Users
+        submit_to_app_store: false
+
