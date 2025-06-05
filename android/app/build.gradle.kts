@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.example.yalla_ride_app"
     compileSdk = 34
-    ndkVersion = "25.1.8937393"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
